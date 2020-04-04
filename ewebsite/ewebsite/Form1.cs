@@ -3,11 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
+using System.Xml;
+using System.Xml.Linq;
 using static ewebsite.变量;
 
 namespace ewebsite
@@ -186,17 +189,17 @@ namespace ewebsite
             button9.Enabled = false;
             Directory.CreateDirectory($"{Application.StartupPath}\\temp");
             Directory.CreateDirectory($"{Application.StartupPath}\\down");
-            IniFiles ini= new IniFiles($"{Application.StartupPath}\\set.ini");
-            if (!ini.ExistINIFile())
+            XMLFiles xml = new XMLFiles($"{Application.StartupPath}\\set.xml");
+            if (!xml.ExistINIFile())
             {
-                File.Create(ini.inipath);
-                ini.IniWriteValue("基础设置", "重试次数", 基本设置.重试次数.ToString());
-                ini.IniWriteValue("基础设置", "重试毫秒", 基本设置.重试毫秒.ToString());
+                xml.CreateXmlFile();
+                xml.setXmlValue("重试次数", 基本设置.重试次数.ToString());
+                xml.setXmlValue("重试毫秒", 基本设置.重试毫秒.ToString());
             }
             else
             {
-                基本设置.重试次数 = Convert.ToInt32(ini.IniReadValue("基础设置", "重试次数"));
-                基本设置.重试毫秒 = Convert.ToInt32(ini.IniReadValue("基础设置", "重试毫秒"));
+                基本设置.重试次数 = Convert.ToInt32(xml.getXmlValue("基本设置", "重试次数"));
+                基本设置.重试毫秒 = Convert.ToInt32(xml.getXmlValue("基本设置", "重试毫秒"));
             }
         }
         private void button2_Click(object sender, EventArgs e)
@@ -487,43 +490,73 @@ namespace ewebsite
             /// </summary>  
             public FileStream FileStream { get; set; }
         }
-        public class IniFiles
+        public class XMLFiles
         {
-            public string inipath;
-            //声明API函数
-            [DllImport("kernel32")]
-            private static extern long WritePrivateProfileString(string section, string key, string val, string filePath);
-            [DllImport("kernel32")]
-            private static extern int GetPrivateProfileString(string section, string key, string def, StringBuilder retVal, int size, string filePath);
+            public string xmlName;
             /// <summary> 
             /// 构造方法 
             /// </summary> 
-            /// <param name="INIPath">文件路径</param> 
-            public IniFiles(string INIPath)
+            /// <param name="XMLName">文件路径</param> 
+            public XMLFiles(string XMLName)
             {
-                inipath = INIPath;
+                xmlName = XMLName;
             }
-            public IniFiles() { }
-            /// <summary> 
-            /// 写入INI文件 
-            /// </summary> 
-            /// <param name="Section">项目名称(如 [TypeName] )</param> 
-            /// <param name="Key">键</param> 
-            /// <param name="Value">值</param> 
-            public void IniWriteValue(string Section, string Key, string Value)
+            public XMLFiles() { }
+            /// <summary>  
+            /// 设置XMl文件指定元素的指定属性的值  
+            /// </summary>  
+            /// <param name="xmlElement">指定元素</param>  
+            /// <param name="xmlAttribute">指定属性</param>  
+            /// <param name="xmlValue">指定值</param>  
+            public void setXmlValue(string xmlAttribute, string xmlValue)
             {
-                WritePrivateProfileString(Section, Key, Value, this.inipath);
+                XDocument xmlDoc = XDocument.Load(xmlName);
+                xmlDoc.Element("设置").Element("基本设置").Element(xmlAttribute).SetValue(xmlValue);
+                xmlDoc.Save(xmlName);
             }
-            /// <summary> 
-            /// 读出INI文件 
-            /// </summary> 
-            /// <param name="Section">项目名称(如 [TypeName] )</param> 
-            /// <param name="Key">键</param> 
-            public string IniReadValue(string Section, string Key)
+            /// <summary>  
+            /// 返回XMl文件指定元素的指定属性值  
+            /// </summary>  
+            /// <param name="xmlElement">指定元素</param>  
+            /// <param name="xmlAttribute">指定属性</param>  
+            /// <returns></returns>  
+            public string getXmlValue(string xmlElement, string xmlAttribute)
             {
-                StringBuilder temp = new StringBuilder(500);
-                int i = GetPrivateProfileString(Section, Key, "", temp, 500, this.inipath);
-                return temp.ToString();
+                XDocument xmlDoc = XDocument.Load(xmlName);
+                var results = from c in xmlDoc.Descendants(xmlAttribute) select c;
+                string s = "";
+                foreach (var result in results)
+                {
+                    s = result.Value.ToString();
+                }
+                return s;
+            }
+            /// <summary>  
+            /// 创建xml
+            /// </summary>  
+            /// <returns></returns>
+            public void CreateXmlFile()
+            {
+                XDocument document = new XDocument();
+                XElement root = new XElement("设置");
+                XElement book = new XElement("基本设置");
+                book.SetElementValue("重试次数", 基本设置.重试次数.ToString());
+                book.SetElementValue("重试毫秒", 基本设置.重试毫秒.ToString());
+                root.Add(book);
+                root.Save(xmlName);
+            }
+            /// <summary>    
+            /// 创建节点    
+            /// </summary>    
+            /// <param name="xmldoc"></param>  xml文档  
+            /// <param name="parentnode"></param>父节点    
+            /// <param name="name"></param>  节点名  
+            /// <param name="value"></param>  节点值  
+            public void CreateNode(XmlDocument xmlDoc, XmlNode parentNode, string name, string value)
+            {
+                XmlNode node = xmlDoc.CreateNode(XmlNodeType.Element, name, null);
+                node.InnerText = value;
+                parentNode.AppendChild(node);
             }
             /// <summary> 
             /// 验证文件是否存在 
@@ -531,7 +564,7 @@ namespace ewebsite
             /// <returns>布尔值</returns> 
             public bool ExistINIFile()
             {
-                return File.Exists(inipath);
+                return File.Exists(xmlName);
             }
         }
     }

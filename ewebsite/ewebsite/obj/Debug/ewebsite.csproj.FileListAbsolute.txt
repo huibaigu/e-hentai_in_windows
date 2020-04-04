@@ -1,0 +1,15 @@
+C:\Users\Administrator\source\repos\ewebsite\ewebsite\obj\Debug\ewebsite.Form1.resources
+C:\Users\Administrator\source\repos\ewebsite\ewebsite\obj\Debug\ewebsite.Properties.Resources.resources
+C:\Users\Administrator\source\repos\ewebsite\ewebsite\obj\Debug\ewebsite.csproj.GenerateResource.cache
+C:\Users\Administrator\source\repos\ewebsite\ewebsite\obj\Debug\ewebsite.csproj.CoreCompileInputs.cache
+C:\Users\Administrator\source\repos\ewebsite\ewebsite\bin\Debug\ewebsite.exe.config
+C:\Users\Administrator\source\repos\ewebsite\ewebsite\bin\Debug\ewebsite.exe
+C:\Users\Administrator\source\repos\ewebsite\ewebsite\bin\Debug\ewebsite.pdb
+C:\Users\Administrator\source\repos\ewebsite\ewebsite\bin\Debug\HtmlAgilityPack.dll
+C:\Users\Administrator\source\repos\ewebsite\ewebsite\bin\Debug\HtmlAgilityPack.pdb
+C:\Users\Administrator\source\repos\ewebsite\ewebsite\obj\Debug\ewebsite.csproj.CopyComplete
+C:\Users\Administrator\source\repos\ewebsite\ewebsite\obj\Debug\ewebsite.exe
+C:\Users\Administrator\source\repos\ewebsite\ewebsite\obj\Debug\ewebsite.pdb
+C:\Users\Administrator\source\repos\ewebsite\ewebsite\obj\Debug\ewebsite.csprojAssemblyReference.cache
+C:\Users\Administrator\source\repos\ewebsite\ewebsite\obj\Debug\ewebsite.Form2.resources
+C:\Users\Administrator\source\repos\ewebsite\ewebsite\obj\Debug\ewebsite.AboutBox1.resources

@@ -5,7 +5,6 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
@@ -31,66 +30,78 @@ namespace ewebsite
             wc1.Headers.Add("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.2; .NET CLR 1.0.3705;)");
             wc1.Headers.Add("cookie", "__cfduid=da53676e4e2d0127fc0430b7a32b601141585825584");
             wc1.Headers.Add("content-type", "text/html; charset=UTF-8");
-            byte[] vb1 = null;
-            try
+            for(int i=0;i< k.URL.Count;i++)
             {
-                vb1 = wc1.DownloadData($"{k.URL}");
-            }
-            catch (Exception)
-            {
-                for (int i = 1; i <= 基本设置.重试次数; i++)
+                byte[] vb1 = null;
+                try
                 {
-                    try
-                    {
-                        Thread.Sleep(基本设置.重试毫秒);
-                        vb1 = wc1.DownloadData($"{k.URL}");
-                    }
-                    catch (Exception)
-                    {
-                        if (i != 基本设置.重试次数) continue;
-                        MessageBox.Show($"连不上,请再次尝试");
-                        return;
-                    }
-                    break;
+                    vb1 = wc1.DownloadData($"{k.URL[i]}");
                 }
-            }
-            var dt1 = Encoding.UTF8.GetString(vb1);
-            HtmlAgilityPack.HtmlDocument doc1 = new HtmlAgilityPack.HtmlDocument();
-            doc1.LoadHtml(dt1);
-            try
-            {
-                var htmlnode1 = doc1.DocumentNode.SelectSingleNode($"/html/body/div[2]/div[4]/div[1]/div[3]/table/tr[6]/td[2]");
-                k.页面数 = htmlnode1.InnerText.Split(' ')[0];
-                Convert.ToInt32(k.页面数);
-                htmlnode1 = doc1.DocumentNode.SelectSingleNode($"/html/body/div[2]/div[4]/div[1]/div[4]/table/tr[2]/td");
-                k.评分 = htmlnode1.InnerText.Split(':')[1];
-                htmlnode1 = doc1.DocumentNode.SelectSingleNode($"/html/body/div[6]");
-                HtmlNodeCollection s1 = htmlnode1.SelectNodes("div");
-                foreach (HtmlNode ls1 in s1)
+                catch (Exception)
                 {
-                    try
+                    for (int j = 1; j <= 基本设置.重试次数; j++)
                     {
-                        string kkk = ls1.OuterHtml.Split('"')[5].Split('(', ')')[1];
-                        下载图片 临时 = new 下载图片();
-                        临时.下载url = kkk;
-                        临时.保存路径 = Application.StartupPath + "\\temp\\" + k.gid + kkk.Split('-')[1];
-                        if (!k.其他信息1.Contains(临时.保存路径))
+                        try
                         {
-                            k.其他信息1.Add(临时.保存路径);
-                            if(!File.Exists(临时.保存路径)) 临时.DownPic();
+                            Thread.Sleep(基本设置.重试毫秒);
+                            vb1 = wc1.DownloadData($"{k.URL[i]}");
                         }
-                        k.其他信息2.Add(ls1.OuterHtml.Split('"')[7]);
-                    }
-                    catch (Exception)
-                    {
-
+                        catch (Exception)
+                        {
+                            if (j != 基本设置.重试次数) continue;
+                            MessageBox.Show($"连不上,请再次尝试");
+                            return;
+                        }
+                        break;
                     }
                 }
-                缓存目录.Add(k.kye.ToString(), k);
-            }
-            catch (Exception l)
-            {
-                textBox2.AppendText($"错误编号2--错误信息:[{k.URL}]{l.Message}\r\n");
+                var dt1 = Encoding.UTF8.GetString(vb1);
+                HtmlAgilityPack.HtmlDocument doc1 = new HtmlAgilityPack.HtmlDocument();
+                doc1.LoadHtml(dt1);
+                try
+                {
+                    var htmlnode1 = doc1.DocumentNode.SelectSingleNode($"/html/body/div[2]/div[4]/div[1]/div[3]/table/tr[6]/td[2]");
+                    k.页面数 = htmlnode1.InnerText.Split(' ')[0];
+                    if (i==0&&Convert.ToInt32(k.页面数)>40)
+                    {
+                        for(int l=1;l<= (Convert.ToInt32(k.页面数)-1)/40;l++)
+                        {
+                            k.URL.Add(k.URL[0] + "/?p=" +l);
+                        }
+                    }
+                    htmlnode1 = doc1.DocumentNode.SelectSingleNode($"/html/body/div[2]/div[4]/div[1]/div[4]/table/tr[2]/td");
+                    k.评分 = htmlnode1.InnerText.Split(':')[1];
+                    htmlnode1 = doc1.DocumentNode.SelectSingleNode($"/html/body/div[6]");
+                    HtmlNodeCollection s1 = htmlnode1.SelectNodes("div");
+                    foreach (HtmlNode ls1 in s1)
+                    {
+                        try
+                        {
+                            string kkk = ls1.OuterHtml.Split('"')[5].Split('(', ')')[1];
+                            下载图片 临时 = new 下载图片();
+                            临时.下载url = kkk;
+                            临时.保存路径 = Application.StartupPath + "\\temp\\" + k.gid + kkk.Split('-')[1];
+                            if (!k.其他信息1.Contains(临时.保存路径))
+                            {
+                                k.其他信息1.Add(临时.保存路径);
+                                if (!File.Exists(临时.保存路径)) 临时.DownPic(this);
+                            }
+                            k.其他信息2.Add(ls1.OuterHtml.Split('"')[7]);
+                        }
+                        catch (Exception)
+                        {
+
+                        }
+                    }
+                    if (i == k.URL.Count-1)
+                    {
+                        缓存目录.Add(k.kye.ToString(), k);
+                    }
+                }
+                catch (Exception l)
+                {
+                    textBox2.AppendText($"错误编号2--错误信息:[{k.URL[i]}]{l.Message}\r\n");
+                }
             }
         }
         private void button1_Click(object sender, EventArgs e)
@@ -143,7 +154,7 @@ namespace ewebsite
                             k.名称 = st[21];
                             k.图片 = st[25];
                             string[] npt = st[31].Split('=', '&', (char)39);
-                            k.URL = $"https://e-hentai.org/g/{npt[2]}/{npt[4]}";
+                            k.URL.Add($"https://e-hentai.org/g/{npt[2]}/{npt[4]}");
                             k.时间 = st[34].Split('>', '<')[1];
                             k.gid = npt[2];
                             k.kye = (++缓存数量).ToString();
@@ -153,7 +164,7 @@ namespace ewebsite
                             k.名称 = st[23];
                             k.图片 = st[27];
                             string[] npt = st[33].Split('=', '&', (char)39);
-                            k.URL = $"https://e-hentai.org/g/{npt[2]}/{npt[4]}";
+                            k.URL.Add($"https://e-hentai.org/g/{npt[2]}/{npt[4]}");
                             k.时间 = st[36].Split('>', '<')[1];
                             k.gid = npt[2];
                             k.kye = (++缓存数量).ToString();
@@ -161,10 +172,10 @@ namespace ewebsite
                         kn0 = new ListViewItem();
                         kn0.Text = 缓存数量.ToString();
                         kn0.SubItems.Add(k.名称);
-                        kn0.SubItems.Add(k.URL);
+                        kn0.SubItems.Add(k.URL[0]);
                         listView1.Items.Add(kn0);
                         //////////////////////////////////
-                        //down1(k);
+                        //线程方法(k);
                         Thread ssa = new Thread(线程方法);
                         ssa.IsBackground = true;
                         ssa.Start(k);
@@ -187,6 +198,9 @@ namespace ewebsite
             Text = "当前第0页";
             button8.Enabled = false;
             button9.Enabled = false;
+            Thread ddd = new Thread(downThread);
+            ddd.IsBackground = true;
+            ddd.Start();
             Directory.CreateDirectory($"{Application.StartupPath}\\temp");
             Directory.CreateDirectory($"{Application.StartupPath}\\down");
             XMLFiles xml = new XMLFiles($"{Application.StartupPath}\\set.xml");
@@ -218,8 +232,30 @@ namespace ewebsite
             if (listView1.SelectedItems[0].Index == listView1.Items.Count - 1)button8.Enabled = false;
             if (listView1.SelectedItems.Count !=1) return;
             textBox1.Text = string.Empty;
-            填充(listView1.SelectedItems[0].Text);
-            button10.Enabled = true;
+            try
+            {
+                填充(listView1.SelectedItems[0].Text);
+                button10.Enabled = true;
+            }
+            catch
+            {
+                try
+                {
+                    listView1.Items[listView1.SelectedItems[0].Index + 1].Selected = true;
+                }
+                catch(Exception)
+                {
+
+                }
+                try
+                {
+                    listView1.SelectedItems[0].Remove();
+                }
+                catch (Exception)
+                {
+
+                }
+            }
         }
         private void button8_Click(object sender, EventArgs e)
         {
@@ -262,13 +298,30 @@ namespace ewebsite
                 ListViewItem 项 = new ListViewItem(listView1.SelectedItems[0].Text);
                 项.SubItems.Add("等待");
                 listView2.Items.Add(项);
-                Thread 线程 = new Thread(选中项数据.下载);
-                线程.IsBackground = true;
-                线程.Start();
             }
             catch(Exception)
             {
                 MessageBox.Show("重复添加");
+            }
+        }
+        private void downThread()
+        {
+            while(true)
+            {
+                Thread.Sleep(10000);
+                try
+                {
+                    if(listView2.Items.Count!=0)
+                    {
+                        string ls = listView2.Items[0].Text;
+                        下载目录[ls].下载(this);
+                        下载目录.Remove(ls);
+                    }
+                }
+                catch
+                {
+                    continue;
+                }
             }
         }
         private void button10_Click(object sender, EventArgs e)
@@ -340,7 +393,7 @@ namespace ewebsite
             /// <summary>  
             /// 详情页面的url地址
             /// </summary>
-            public string URL;
+            public List<string> URL = new List<string>();
             /// <summary>  
             /// 在网上的GID
             /// </summary>
@@ -357,20 +410,55 @@ namespace ewebsite
             /// 在软件中的ID
             /// </summary>
             public string kye;
-            public void 下载()
+            public void 下载(object haha)
             {
-                Form1 form1 = new Form1();
+                Form1 form1 = (Form1)haha;
                 if (Directory.Exists($"{Application.StartupPath}\\down\\{gid}")) return;
                 foreach (string ul in 其他信息2)
                 {
+                    Thread.Sleep(1000);
+                    var wc = new WebClient();
+                    wc.Credentials = CredentialCache.DefaultCredentials;
+                    wc.Headers.Add("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.2; .NET CLR 1.0.3705;)");
+                    wc.Headers.Add("cookie", "__cfduid=da53676e4e2d0127fc0430b7a32b601141585825584");
+                    wc.Headers.Add("content-type", "text/html; charset=UTF-8");
+                    byte[] vb = null;
                     try
                     {
+                        vb = wc.DownloadData(ul);
+                    }
+                    catch (Exception)
+                    {
+                        for (int i = 1; i <= 基本设置.重试次数; i++)
+                        {
+                            try
+                            {
+                                Thread.Sleep(基本设置.重试毫秒);
+                                vb = wc.DownloadData(ul);
+                            }
+                            catch (Exception k)
+                            {
+                                if (i != 基本设置.重试次数) continue;
+                                form1.textBox2.AppendText($"错误编号4-[请手动下载]-错误信息:[{ul}]{k.Message}\r\n");
+                                continue;
+                            }
+                            break;
+                        }
+                    }
+                    var dt = Encoding.UTF8.GetString(vb);
+                    HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
+                    doc.LoadHtml(dt);
+                    try
+                    {
+                        var htmlnode = doc.DocumentNode.SelectSingleNode($"/html[1]/body[1]/div[1]/div[2]/a[1]");
+                        HtmlNode s = htmlnode.SelectSingleNode("img");
+                        string ull =s.OuterHtml.Split('"')[3];
                         下载图片 临时 = new 下载图片();
-                        临时.下载url = ul;
+                        临时.下载url = ull;
                         Directory.CreateDirectory($"{Application.StartupPath}\\down\\{gid}");
                         临时.保存路径 = $"{Application.StartupPath}\\down\\{gid}\\{ul.Split('-')[2]}.jpg";
                         if (File.Exists($"{Application.StartupPath}\\down\\{gid}\\{ul.Split('-')[2]}.jpg")) continue;
-                        临时.DownPic();
+                        临时.DownPic(haha);
                     }
                     catch(Exception l)
                     {
@@ -378,6 +466,7 @@ namespace ewebsite
                         其他信息2.Add(ul);
                     }
                 }
+
                 for (int i = 0; i < form1.listView2.Items.Count; i++)
                 {
                     if (form1.listView2.Items[i].Text == kye)
@@ -410,6 +499,7 @@ namespace ewebsite
             /// <param name="asyncResult">用于在回调函数当中传递操作状态</param>  
             private void ReadCallback(IAsyncResult asyncResult)
             {
+                System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12; //加上这一句
                 RequestState requestState = (RequestState)asyncResult.AsyncState;
                 int read = requestState.ResponseStream.EndRead(asyncResult);
                 if (read > 0)
@@ -421,6 +511,8 @@ namespace ewebsite
                 }
                 else
                 {
+                    Form1 form1 = (Form1)requestState.obj;
+                    form1.textBox2.AppendText($"信息:{下载url}-----已完成\r\n");
                     requestState.Response.Close();
                     requestState.FileStream.Close();
                 }
@@ -431,6 +523,7 @@ namespace ewebsite
             /// <param name="asyncResult">用于在回调函数当中传递操作状态</param>  
             private void ResponseCallback(IAsyncResult asyncResult)
             {
+                System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12; //加上这一句
                 RequestState requestState = (RequestState)asyncResult.AsyncState;
                 requestState.Response = (HttpWebResponse)requestState.Request.EndGetResponse(asyncResult);
                 Stream responseStream = requestState.Response.GetResponseStream();
@@ -441,8 +534,9 @@ namespace ewebsite
             /// <summary>  
             /// 异步下载图片
             /// </summary>  
-            public void DownPic()
+            public void DownPic(object haha)
             {
+                System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12; //加上这一句
                 //------------------------开始异步下载图片
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(new Uri(下载url));
                 //设置下载相关参数  
@@ -452,6 +546,7 @@ namespace ewebsite
                 requestState.Request = request;
                 requestState.SavePath = 保存路径;
                 requestState.FileStream = new FileStream(requestState.SavePath, FileMode.OpenOrCreate);
+                requestState.obj=haha;
                 //开始异步请求资源
                 request.BeginGetResponse(new AsyncCallback(ResponseCallback), requestState);
             }
@@ -461,6 +556,10 @@ namespace ewebsite
         /// </summary>  
         public class RequestState
         {
+            /// <summary>  
+            /// 控制控件  
+            /// </summary>  
+            public object obj { get; set; }
             /// <summary>  
             /// 缓冲区大小  
             /// </summary>  

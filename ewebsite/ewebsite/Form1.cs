@@ -10,6 +10,7 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Xml;
 using System.Xml.Linq;
+using System.Text.RegularExpressions;
 using static ewebsite.变量;
 
 namespace ewebsite
@@ -60,8 +61,8 @@ namespace ewebsite
                 doc1.LoadHtml(dt1);
                 try
                 {
-                    var htmlnode1 = doc1.DocumentNode.SelectSingleNode($"/html/body/div[2]/div[4]/div[1]/div[3]/table/tr[6]/td[2]");
-                    k.页面数 = htmlnode1.InnerText.Split(' ')[0];
+                    Regex regex = new Regex("Length:</td><td class=\"gdt2\">\\d*");
+                    k.页面数 = regex.Match(doc1.DocumentNode.InnerHtml).ToString().Split('>')[2];
                     if (i==0&&Convert.ToInt32(k.页面数)>40)
                     {
                         for(int l=1;l<= (Convert.ToInt32(k.页面数)-1)/40;l++)
@@ -69,9 +70,10 @@ namespace ewebsite
                             k.URL.Add(k.URL[0] + "/?p=" +l);
                         }
                     }
-                    htmlnode1 = doc1.DocumentNode.SelectSingleNode($"/html/body/div[2]/div[4]/div[1]/div[4]/table/tr[2]/td");
-                    k.评分 = htmlnode1.InnerText.Split(':')[1];
-                    htmlnode1 = doc1.DocumentNode.SelectSingleNode($"/html/body/div[6]");
+                    regex = new Regex("<td id=\"rating_label\" \\S*>Average: \\d*");
+                    k.评分 = regex.Match(doc1.DocumentNode.InnerHtml).ToString().Split(' ')[3];
+
+                    HtmlNode htmlnode1 = doc1.DocumentNode.SelectSingleNode($"/html/body/div[6]");
                     HtmlNodeCollection s1 = htmlnode1.SelectNodes("div");
                     foreach (HtmlNode ls1 in s1)
                     {
@@ -313,6 +315,7 @@ namespace ewebsite
                 {
                     if(listView2.Items.Count!=0)
                     {
+                        while (图片数 > 5) Thread.Sleep(1000);
                         string ls = listView2.Items[0].Text;
                         下载目录[ls].下载(this);
                         下载目录.Remove(ls);
@@ -372,6 +375,7 @@ namespace ewebsite
         /// 当前临时浏览到略缩图的第几页
         /// </summary>
         public static int 图片页数 = 0;
+        public static int 图片数 = 0;
         /// <summary>  
         /// 所有的本的数据
         /// </summary>
@@ -416,6 +420,8 @@ namespace ewebsite
                 if (Directory.Exists($"{Application.StartupPath}\\down\\{gid}")) return;
                 foreach (string ul in 其他信息2)
                 {
+                    图片数++;
+                    while(图片数>5) Thread.Sleep(1000);
                     Thread.Sleep(1000);
                     var wc = new WebClient();
                     wc.Credentials = CredentialCache.DefaultCredentials;
@@ -456,8 +462,8 @@ namespace ewebsite
                         下载图片 临时 = new 下载图片();
                         临时.下载url = ull;
                         Directory.CreateDirectory($"{Application.StartupPath}\\down\\{gid}");
-                        临时.保存路径 = $"{Application.StartupPath}\\down\\{gid}\\{ul.Split('-')[2]}.jpg";
-                        if (File.Exists($"{Application.StartupPath}\\down\\{gid}\\{ul.Split('-')[2]}.jpg")) continue;
+                        临时.保存路径 = $"{Application.StartupPath}\\down\\{gid}\\{string.Format("{0:0000}", Convert.ToInt32(ul.Split('-')[2]))}.jpg";
+                        if (File.Exists(临时.保存路径)) continue;
                         临时.DownPic(haha);
                     }
                     catch(Exception l)
@@ -474,6 +480,11 @@ namespace ewebsite
                         form1.listView2.Items[i].Remove();
                     }
                 }
+            }
+
+            private void ToString(string v)
+            {
+                throw new NotImplementedException();
             }
         }
         /// <summary>  
@@ -501,18 +512,30 @@ namespace ewebsite
             {
                 System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12; //加上这一句
                 RequestState requestState = (RequestState)asyncResult.AsyncState;
-                int read = requestState.ResponseStream.EndRead(asyncResult);
-                if (read > 0)
+                try
                 {
-                    //将缓冲区的数据写入该文件流  
-                    requestState.FileStream.Write(requestState.BufferRead, 0, read);
-                    //开始异步读取流  
-                    requestState.ResponseStream.BeginRead(requestState.BufferRead, 0, requestState.BufferRead.Length, ReadCallback, requestState);
+                    int read = requestState.ResponseStream.EndRead(asyncResult);
+                    if (read > 0)
+                    {
+                        //将缓冲区的数据写入该文件流  
+                        requestState.FileStream.Write(requestState.BufferRead, 0, read);
+                        //开始异步读取流  
+                        requestState.ResponseStream.BeginRead(requestState.BufferRead, 0, requestState.BufferRead.Length, ReadCallback, requestState);
+                    }
+                    else
+                    {
+                        Form1 form1 = (Form1)requestState.obj;
+                        form1.textBox2.AppendText($"信息:{下载url}-----已完成\r\n");
+                        图片数--;
+                        requestState.Response.Close();
+                        requestState.FileStream.Close();
+                    }
                 }
-                else
+                catch (Exception a)
                 {
                     Form1 form1 = (Form1)requestState.obj;
-                    form1.textBox2.AppendText($"信息:{下载url}-----已完成\r\n");
+                    form1.textBox2.AppendText($"错误编号5-[网络问题]-错误信息:[{下载url}]{a.Message}\r\n");
+                    图片数--;
                     requestState.Response.Close();
                     requestState.FileStream.Close();
                 }
